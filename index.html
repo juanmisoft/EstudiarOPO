@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Examen - Cuerpo GSI Estado</title>
+    <meta name="description" content="Simulador inteligente y premium de exámenes tipo test oficiales para el Cuerpo de Gestión de Sistemas e Informática (GSI) de la Administración General del Estado.">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <!-- HEADER PRINCIPAL -->
+        <header>
+            <div class="logo-section">
+                <div class="logo-icon">
+                    <i class="fas fa-network-wired" style="color: white; font-size: 24px;"></i>
+                </div>
+                <div>
+                    <h1>Simulador GSI Estado</h1>
+                    <p>Preparación Oficial - Gestión de Sistemas e Informática</p>
+                </div>
+            </div>
+            
+            <div class="header-controls">
+                <!-- Selector de Modo Examen vs Práctica -->
+                <div class="mode-toggle" id="mode-toggle">
+                    <button class="mode-btn active" id="mode-examen-btn">
+                        <i class="fas fa-graduation-cap"></i> Modo Examen
+                    </button>
+                    <button class="mode-btn" id="mode-practica-btn">
+                        <i class="fas fa-dumbbell"></i> Modo Práctica
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- PANEL DE CONTENIDO PRINCIPAL -->
+        <main>
+            
+            <!-- CUADRO DE MANDOS DEL PROGRESO (DASHBOARD) -->
+            <div class="dashboard-grid">
+                
+                <!-- Progreso Total -->
+                <div class="stat-card" id="stat-progress-card">
+                    <div class="stat-header">
+                        <span>Preguntas Respondidas</span>
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                    <div class="stat-value" id="dashboard-answered">0 / 100</div>
+                    <div class="stat-progress-bar">
+                        <div class="stat-progress" id="dashboard-progress-bar"></div>
+                    </div>
+                    <div class="stat-footer">Meta: Completar 100 preguntas</div>
+                </div>
+
+                <!-- Bloque General (30%) -->
+                <div class="stat-card" id="stat-general-card">
+                    <div class="stat-header">
+                        <span>Temas Generales (30%)</span>
+                        <i class="fas fa-balance-scale"></i>
+                    </div>
+                    <div class="stat-value" id="dashboard-general">0 / 30</div>
+                    <div class="stat-progress-bar">
+                        <div class="stat-progress" id="dashboard-progress-gen"></div>
+                    </div>
+                    <div class="stat-footer">Bloque I (Constitucional y Admin)</div>
+                </div>
+
+                <!-- Bloque Específico (70%) -->
+                <div class="stat-card" id="stat-specific-card">
+                    <div class="stat-header">
+                        <span>Temas Específicos (70%)</span>
+                        <i class="fas fa-laptop-code"></i>
+                    </div>
+                    <div class="stat-value" id="dashboard-specific">0 / 70</div>
+                    <div class="stat-progress-bar">
+                        <div class="stat-progress specific" id="dashboard-progress-spec"></div>
+                    </div>
+                    <div class="stat-footer">Bloques II, III y IV (Tecnología y Redes)</div>
+                </div>
+
+                <!-- Temporizador / Calificación -->
+                <div class="stat-card timer-card" id="timer-container">
+                    <div class="stat-header">
+                        <span>Tiempo Restante</span>
+                        <i class="fas fa-hourglass-half"></i>
+                    </div>
+                    <div class="stat-value timer-value" id="timer-value">100:00</div>
+                    <div class="stat-progress-bar" style="background: rgba(245, 158, 11, 0.1);">
+                        <div class="stat-progress" style="width: 100%; background: var(--warning-gradient);"></div>
+                    </div>
+                    <div class="stat-footer">Examen de 100 minutos oficiales</div>
+                </div>
+
+                <!-- Nota en Vivo / Calificación Reciente -->
+                <div class="stat-card" id="stat-score-card">
+                    <div class="stat-header">
+                        <span id="dashboard-score-label">Calificación</span>
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-value" id="dashboard-score-val">--</div>
+                    <div class="stat-progress-bar">
+                        <div class="stat-progress" style="width: 100%; background: linear-gradient(135deg, #10b981 0%, #059669 100%);"></div>
+                    </div>
+                    <div class="stat-footer">Suma 1.0, resta 0.33</div>
+                </div>
+
+            </div>
+
+            <!-- BARRA DE ACCIONES PRINCIPALES -->
+            <div class="actions-bar">
+                <button class="btn btn-outline" id="reset-btn">
+                    <i class="fas fa-trash-alt"></i> Limpiar Examen
+                </button>
+                
+                <div class="btn-group">
+                    <button class="btn btn-secondary" id="regenerate-btn">
+                        <i class="fas fa-redo-alt"></i> Regenerar Test (Nuevas 100)
+                    </button>
+                    <button class="btn btn-primary" id="submit-btn">
+                        <i class="fas fa-paper-plane"></i> Entregar y Corregir
+                    </button>
+                </div>
+            </div>
+
+            <!-- LISTADO DINÁMICO DE PREGUNTAS -->
+            <div class="questions-container" id="questions-list">
+                <!-- Se inyecta dinámicamente con JavaScript -->
+            </div>
+
+        </main>
+
+        <!-- PANEL DE NAVEGACIÓN LATERAL (ASIDE) -->
+        <aside class="side-panel">
+            
+            <!-- Cuadrícula de Navegación Rápida -->
+            <div class="grid-card">
+                <h3><i class="fas fa-th"></i> Navegación Rápida</h3>
+                
+                <div class="q-grid" id="questions-grid">
+                    <!-- Se inyecta dinámicamente -->
+                </div>
+                
+                <div class="grid-legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.06);"></div>
+                        <span>Sin responder</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: rgba(99, 102, 241, 0.25); border: 1px solid #6366f1;"></div>
+                        <span>Respondida</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981;"></div>
+                        <span>Correcta</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444;"></div>
+                        <span>Incorrecta</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Guía de Criterios Oficiales de las Bases -->
+            <div class="guide-card">
+                <h3><i class="fas fa-info-circle"></i> Criterios de Evaluación</h3>
+                <ul>
+                    <li>
+                        <i class="fas fa-check-circle text-success"></i>
+                        <div><strong>Preguntas Oficiales:</strong> Consta de 100 preguntas elegidas aleatoriamente de exámenes oficiales reales.</div>
+                    </li>
+                    <li>
+                        <i class="fas fa-divide text-info"></i>
+                        <div><strong>Pesos del Examen:</strong> Respeta exactamente los criterios oficiales: 30 de bloque general (30%) y 70 de bloque específico (70%).</div>
+                    </li>
+                    <li>
+                        <i class="fas fa-star text-warning"></i>
+                        <div><strong>Preguntas Repetidas:</strong> Las preguntas que se han repetido en varios años llevan el distintivo de <span class="badge badge-important" style="display:inline-block; transform: scale(0.9); vertical-align:middle; padding: 2px 6px;">Pregunta Frecuente</span>.</div>
+                    </li>
+                    <li>
+                        <i class="fas fa-plus text-success"></i>
+                        <div><strong>Aciertos:</strong> Cada respuesta correcta añade <strong>+1 punto</strong>.</div>
+                    </li>
+                    <li>
+                        <i class="fas fa-minus text-error"></i>
+                        <div><strong>Errores:</strong> Cada respuesta fallada penaliza restando <strong>-0.33 puntos</strong> (1/3). Las en blanco no penalizan.</div>
+                    </li>
+                    <li>
+                        <i class="fas fa-trophy text-warning"></i>
+                        <div><strong>Aprobado:</strong> Se requiere alcanzar un mínimo de <strong>50 puntos netos</strong> (Nota final 5.0) para aprobar.</div>
+                    </li>
+                </ul>
+            </div>
+
+        </aside>
+
+    </div>
+
+    <!-- MODAL DE RESULTADOS -->
+    <div class="results-modal-overlay" id="results-modal">
+        <div class="results-modal-content">
+            <h2 class="results-title">Resultado de la Simulación</h2>
+            
+            <!-- Gráfico Circular de Progreso de la Nota -->
+            <div class="score-circle-container">
+                <svg class="score-svg" viewBox="0 0 160 160">
+                    <defs>
+                        <linearGradient id="score-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#6366f1" />
+                            <stop offset="50%" stop-color="#a855f7" />
+                            <stop offset="100%" stop-color="#10b981" />
+                        </linearGradient>
+                    </defs>
+                    <circle class="score-svg-bg" cx="80" cy="80" r="70" />
+                    <circle class="score-svg-progress" id="modal-circle-progress" cx="80" cy="80" r="70" />
+                </svg>
+                <div class="score-text-container">
+                    <div class="score-grade" id="modal-score-grade">0.0</div>
+                    <div class="score-label">Nota Final</div>
+                </div>
+            </div>
+
+            <!-- Insignia de Aprobado / Suspenso -->
+            <div class="results-badge" id="modal-status-badge">---</div>
+
+            <!-- Desglose de Estadísticas -->
+            <div class="results-grid">
+                <div class="result-stat-item">
+                    <div class="result-stat-label">Correctas</div>
+                    <div class="result-stat-value text-success" id="modal-stat-correct">0</div>
+                </div>
+                <div class="result-stat-item">
+                    <div class="result-stat-label">Incorrectas</div>
+                    <div class="result-stat-value text-error" id="modal-stat-incorrect">0</div>
+                </div>
+                <div class="result-stat-item">
+                    <div class="result-stat-label">Puntos Netos</div>
+                    <div class="result-stat-value text-warning" id="modal-stat-score">0.0</div>
+                </div>
+            </div>
+
+            <!-- Botones del Modal -->
+            <div class="modal-buttons">
+                <button class="btn btn-outline" id="modal-review-btn">
+                    <i class="fas fa-search"></i> Revisar Errores
+                </button>
+                <button class="btn btn-primary" id="modal-new-btn">
+                    <i class="fas fa-redo-alt"></i> Nuevo Examen
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST DE NOTIFICACIONES FLOTANTES -->
+    <div class="toast" id="toast-notification">
+        <i class="fas fa-info-circle"></i>
+        <span>Mensaje flotante de prueba</span>
+    </div>
+
+    <!-- IMPORTACIÓN DE LA BASE DE DATOS Y DEL ENGINE DE LA APP -->
+    <script src="questions_db.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+# Evitar subir los archivos PDF pesados
+*.pdf
+
+# Archivos temporales del sistema operativo
+.DS_Store
+
+# Archivos de python (scripts de análisis)
+*.py
+questions_db.json
