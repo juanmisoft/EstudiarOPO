@@ -1,587 +1,774 @@
-// Estado global de la aplicación
-let questionsPool = [];          // Todas las preguntas cargadas desde questions_db.js
-let currentTestQuestions = [];   // Las 100 preguntas elegidas para el examen actual
-let userAnswers = {};            // Respuestas del usuario { indice_pregunta: 'letra' }
-let examMode = true;             // true = Modo Examen (tiempo, feedback al final), false = Modo Práctica (feedback inmediato)
-let testGraded = false;          // Indica si el examen ya ha sido corregido y entregado
-let timerInterval = null;        // Referencia del intervalo del temporizador
-let timeRemaining = 6000;        // Tiempo restante en segundos (100 minutos estándar)
-const EXAM_DURATION = 6000;      // 100 minutos en segundos
+// app.js – Premium Interactivity, Engines, Databases & Test Simulator for GSI Study Portal
 
-// Inicialización
-document.addEventListener("DOMContentLoaded", () => {
-    // 1. Cargar preguntas de la base de datos
-    if (typeof questionsData !== "undefined" && Array.isArray(questionsData)) {
-        questionsPool = questionsData;
-        console.log(`Base de datos cargada: ${questionsPool.length} preguntas.`);
-    } else {
-        showToast("Error: No se pudo cargar la base de datos de preguntas.", "error");
-        renderEmptyState();
-        return;
+document.addEventListener('DOMContentLoaded', () => {
+  
+  // ==========================================
+  // ⚖️ LAWS DATABASE
+  // ==========================================
+  const lawsData = [
+    {
+      title: "Real Decreto 311/2022 (ENS)",
+      badge: "106 menciones",
+      badgeType: "gold",
+      desc: "Establece el Esquema Nacional de Seguridad. Regula los principios básicos, requisitos mínimos y medidas de seguridad (físicas, lógicas y organizativas) obligatorias para garantizar la protección de la información y los servicios en la administración electrónica.",
+      scope: "Todo el Sector Público español e integradores o proveedores tecnológicos privados que colaboren con la administración."
+    },
+    {
+      title: "Real Decreto 4/2010 (ENI)",
+      badge: "83 menciones",
+      badgeType: "gold",
+      desc: "Regula el Esquema Nacional de Interoperabilidad. Define los criterios y condiciones necesarias para garantizar el intercambio de datos, documentos y expedientes electrónicos entre diferentes sistemas y organismos de forma segura y consistente.",
+      scope: "Administración General del Estado, Comunidades Autónomas, Entidades Locales y organismos públicos vinculados o dependientes."
+    },
+    {
+      title: "Constitución Española de 1978",
+      badge: "22 menciones",
+      badgeType: "indigo",
+      desc: "Norma suprema de la jerarquía legislativa nacional. Garantiza los derechos fundamentales (artículos 14-29), como la limitación legal al uso de la informática en el art. 18.4, y define la organización de las instituciones clave del Estado.",
+      scope: "Nacional (Ciudadanía, Poderes Públicos e Instituciones del Estado)."
+    },
+    {
+      title: "Ley 39/2015 (LPACAP)",
+      badge: "13 menciones",
+      badgeType: "indigo",
+      desc: "Ley del Procedimiento Administrativo Común de las Administraciones Públicas. Establece las bases del procedimiento de tramitación de expedientes, los derechos de los interesados, la validez de los actos administrativos y el uso de registros electrónicos.",
+      scope: "Todas las Administraciones Públicas (Territoriales, Institucionales y Entidades Sectoriales)."
+    },
+    {
+      title: "Ley 40/2015 (LRJSP)",
+      badge: "13 menciones",
+      badgeType: "indigo",
+      desc: "Ley de Régimen Jurídico del Sector Público. Regula el funcionamiento interno de los entes públicos, el régimen de responsabilidad patrimonial y las herramientas para la administración digital (Sedes Electrónicas, Actuaciones Automatizadas, Firmas).",
+      scope: "Todas las Administraciones Públicas y Sector Público institucional."
+    },
+    {
+      title: "Reglamento (UE) 2016/679 y LO 3/2018",
+      badge: "15 menciones",
+      badgeType: "indigo",
+      desc: "Reglamento General de Protección de Datos (RGPD) y Ley Orgánica de Protección de Datos y Garantía de los Derechos Digitales (LOPDGDD). Regulan el tratamiento lícito, leal y transparente de datos personales y otorgan los derechos ARSULIP+ y digitales.",
+      scope: "Nacional y Europeo. Ámbito público y privado con tratamiento de datos."
+    },
+    {
+      title: "Ley 19/2013 (Transparencia y Buen Gobierno)",
+      badge: "18 menciones",
+      badgeType: "indigo",
+      desc: "Regula la transparencia en la actividad pública bajo una doble vertiente: obligaciones de publicidad activa y el derecho subjetivo de acceso del ciudadano a la información. Establece el régimen de buen gobierno y sus sanciones.",
+      scope: "Administraciones públicas, empresas públicas, partidos políticos, sindicatos y corporaciones de derecho público."
+    },
+    {
+      title: "Ley Orgánica 3/2007 (Igualdad Efectiva)",
+      badge: "10 menciones",
+      badgeType: "indigo",
+      desc: "Ley para la igualdad efectiva de mujeres y hombres. Contiene medidas destinadas a evitar la discriminación por razón de sexo y establece la obligatoriedad de implementar y evaluar periódicamente planes de igualdad en el ámbito del empleo público.",
+      scope: "Nacional. De aplicación transversal en Administraciones Públicas, empresas y particulares."
+    },
+    {
+      title: "Ley 37/2007 (Reutilización de Información)",
+      badge: "8 menciones",
+      badgeType: "indigo",
+      desc: "Regula las condiciones de reutilización de documentos y bases de datos producidos por las AAPP. Facilita la creación de productos de valor añadido (open data), impulsando la economía digital y la rendición de cuentas pública.",
+      scope: "Sector público nacional, con exclusiones específicas (archivos de museos, bibliotecas nacionales, etc.)."
     }
-    
-    // 2. Escuchar eventos de la interfaz
-    setupEventListeners();
-    
-    // 3. Generar el primer examen automático
-    generateNewTest();
-});
+  ];
 
-// Configurar los listeners para botones y controles
-function setupEventListeners() {
-    // Alternar modos (Examen vs Práctica)
-    document.getElementById("mode-examen-btn").addEventListener("click", () => setExamMode(true));
-    document.getElementById("mode-practica-btn").addEventListener("click", () => setExamMode(false));
+  // ==========================================
+  // 📚 GLOSSARY DATABASE
+  // ==========================================
+  const glossaryGeneral = [
+    { term: "Acto Administrativo", definition: "Declaración de voluntad, de juicio, de conocimiento o de deseo realizada por la Administración en ejercicio de una potestad administrativa distinta de la potestad reglamentaria." },
+    { term: "Publicidad Activa", definition: "Obligación de los sujetos incluidos en la Ley 19/2013 de publicar de forma periódica y actualizada la información relevante sobre su funcionamiento, contratos, presupuestos e institucionalidad." },
+    { term: "Derecho de Acceso", definition: "Facultad subjetiva del ciudadano para solicitar información pública en poder de las administraciones públicas y entidades del sector público sin obligación de justificar interés." },
+    { term: "Delegado de Protección de Datos (DPD)", definition: "Figura obligatoria en el sector público encargada de supervisar el cumplimiento de la normativa de protección de datos, asesorar al responsable y actuar como enlace con la AEPD." },
+    { term: "Sede Electrónica", definition: "Dirección electrónica, disponible para los ciudadanos a través de redes de telecomunicaciones, cuya titularidad, gestión y administración corresponde a una Administración Pública." },
+    { term: "Actuación Administrativa Automatizada", definition: "Cualquier acto o actuación realizada íntegramente a través de un sistema de información adecuadamente programado, sin intervención directa de una persona física." },
+    { term: "Firma Electrónica Cualificada", definition: "Firma electrónica avanzada que se crea mediante un dispositivo cualificado de creación de firmas y se basa en un certificado cualificado de firma electrónica." },
+    { term: "Procedimiento Administrativo Común", definition: "Conjunto formal de trámites que rige la actuación de la Administración para materializar sus decisiones y garantizar los derechos de los administrados." },
+    { term: "Silencio Administrativo", definition: "Ficción legal por la cual, transcurrido el plazo máximo legal para dictar y notificar resolución expresa, se producen efectos estimatorios (positivo) o desestimatorios (negativo)." },
+    { term: "Cooperación Interadministrativa", definition: "Principio rector por el cual dos o más administraciones coordinan de mutuo acuerdo sus políticas sectoriales a través de órganos colegiados o convenios formales." },
+    { term: "Estatuto Básico del Empleado Público (EBEP)", definition: "Texto refundido que establece las bases del régimen estatutario de los funcionarios públicos y del personal laboral al servicio de las AAPP." },
+    { term: "Plan de Igualdad en la AGE", definition: "Instrumento estratégico que recoge las medidas correctoras acordadas para garantizar la ausencia de discriminaciones de género y fomentar la conciliación." },
+    { term: "Comisión de Estrategia TIC", definition: "Órgano colegiado de gobernanza encargado de definir las líneas estratégicas en materia de tecnologías de la información y administración digital del Estado." },
+    { term: "Reutilización de Información", definition: "El uso de documentos que obran en poder de las administraciones públicas por personas físicas o jurídicas, con fines comerciales o no comerciales." },
+    { term: "Derechos ARSULIP+", definition: "El conjunto de derechos de protección de datos: Acceso, Rectificación, Supresión (Olvido), Limitación del tratamiento, Portabilidad, Oposición y decisiones automatizadas." }
+  ];
+
+  const glossaryTechnical = [
+    { term: "Esquema Nacional de Seguridad (ENS)", definition: "Conjunto de principios básicos, requisitos mínimos y medidas de seguridad agrupadas en categorías (Organización, Marco Operacional y Medidas de Protección) para proteger los sistemas de información del sector público." },
+    { term: "Esquema Nacional de Interoperabilidad (ENI)", definition: "Marco normativo que define las normas técnicas y organizativas comunes para posibilitar la compartición segura y efectiva de datos y servicios entre sistemas informáticos gubernamentales." },
+    { term: "Cloud Computing (SaaS, PaaS, IaaS)", definition: "Modelo de prestación de servicios tecnológicos que permite el acceso bajo demanda a recursos computacionales escalables e infraestructura física (IaaS), plataformas de desarrollo (PaaS) o software final (SaaS)." },
+    { term: "Bases de Datos Relacionales (ACID)", definition: "Sistemas gestores de datos basados en tablas que garantizan robustez e integridad transaccional mediante el cumplimiento de atomicidad, consistencia, aislamiento y durabilidad." },
+    { term: "NoSQL (ACID vs BASE)", definition: "Sistemas de almacenamiento de información no relacionales diseñados para escalabilidad horizontal masiva, regidos por el teorema CAP y el paradigma transaccional BASE (Basically Available, Soft State, Eventual Consistency)." },
+    { term: "Modelo OSI vs TCP/IP", definition: "Modelos de referencia de comunicaciones de red. OSI se compone de 7 capas teóricas e independientes, mientras que TCP/IP condensa la arquitectura de internet real en 4 capas operativas." },
+    { term: "Docker (Volúmenes y Contenedores)", definition: "Tecnología de virtualización a nivel de sistema operativo que empaqueta aplicaciones en contenedores ligeros y portables. Los volúmenes permiten persistir datos fuera del contenedor." },
+    { term: "Firma Digital (CAdES, XAdES, PAdES)", definition: "Formatos estándar de firma electrónica cualificada. CAdES (binario CMS), XAdES (estructura XML para metadatos y portabilidad) y PAdES (cifrado e incrustado en archivos PDF nativos)." },
+    { term: "DevOps y CI/CD", definition: "Filosofía de desarrollo y operaciones unificadas apoyada en pipelines automatizados de integración continua (CI) y despliegue continuo (CD) para automatizar builds, test y despliegues rápidos." },
+    { term: "Metodologías Ágiles (SCRUM)", definition: "Marco de trabajo iterativo para desarrollo complejo caracterizado por roles claros (Product Owner, Scrum Master, Developers) y eventos fijos (Sprints, Daily, Retrospective)." },
+    { term: "Bastionado de Sistemas (Hardening)", definition: "Proceso de asegurar un sistema operativo o aplicación reduciendo su superficie de ataque mediante el cierre de puertos innecesarios, desactivación de servicios y refuerzo de políticas." },
+    { term: "Arquitectura Microservicios", definition: "Estilo arquitectónico de desarrollo de software consistente en dividir una aplicación compleja en pequeños servicios independientes, desacoplados y comunicados vía API ligera (REST/gRPC)." },
+    { term: "Criptografía Asimétrica (Clave Pública)", definition: "Método de cifrado basado en un par de claves matemáticamente relacionadas: una clave pública para cifrar o verificar y una clave privada para descifrar o firmar de forma segura." },
+    { term: "Redes Privadas Virtuales (VPN - IPsec vs SSL)", definition: "Túneles virtuales para conectar redes remotas. IPsec opera en capa de red (Capa 3 OSI), ideal para uniones site-to-site estables; SSL/TLS opera en capa de aplicación, óptimo para accesos remotos cliente-servidor." },
+    { term: "Sistemas SIEM", definition: "Security Information and Event Management. Herramienta centralizada que recopila, correlaciona y analiza logs de seguridad generados por dispositivos y sistemas en toda la infraestructura de red." },
+    { term: "OAuth 2.0 y OpenID Connect (OIDC)", definition: "OAuth 2.0 es un marco estándar abierto para autorización delegada de acceso a recursos de terceros; OpenID Connect es una capa de identidad superior que añade autenticación federada usando JSON Web Tokens." },
+    { term: "SAML 2.0 (Security Assertion Markup Language)", definition: "Estándar de intercambio de datos de identidad basado en XML que facilita la autenticación única (Single Sign-On o SSO) entre un proveedor de identidad (IdP) y un proveedor de servicios (SP)." },
+    { term: "API Gateway", definition: "Punto de entrada único al sistema que gestiona, protege y enruta las peticiones de los clientes a los distintos microservicios traseros, encargándose del balanceo de carga, la autenticación y el rate limiting." },
+    { term: "JWT (JSON Web Token)", definition: "Estándar abierto (RFC 7519) que define un formato compacto y autocontenido para transmitir de forma segura información formateada en JSON firmada criptográficamente con HMAC o RSA." },
+    { term: "WSDL (Web Services Description Language)", definition: "Archivo descriptor en formato XML de un servicio web basado en SOAP que especifica la interfaz pública, los métodos, parámetros requeridos y la dirección de red del endpoint." },
+    { term: "Hipervisor (Tipo 1 vs Tipo 2)", definition: "Software de virtualización. El Tipo 1 (Bare-metal) se ejecuta directamente sobre el hardware físico (ej: VMware ESXi, Proxmox); el Tipo 2 requiere un sistema operativo anfitrión previo (ej: VirtualBox)." },
+    { term: "Kubernetes (K8s)", definition: "Sistema de código abierto de orquestación de contenedores que automatiza el despliegue, el escalado dinámico, el enrutamiento de red y la autocuración (self-healing) de clústeres de contenedores." },
+    { term: "DNSSEC (Domain Name System Security Extensions)", definition: "Extensiones del protocolo DNS clásico que proporcionan autenticación de datos de origen e integridad de datos mediante firmas criptográficas en las respuestas DNS para mitigar ataques de spoofing." },
+    { term: "DHCP (Dynamic Host Configuration Protocol)", definition: "Protocolo de configuración de red dinámico que asigna de forma automatizada direcciones IP, máscaras de subred, puertas de enlace predeterminadas y servidores DNS a los hosts de la red local." },
+    { term: "HTTPS / TLS", definition: "Canal seguro de transferencia web. Combina el protocolo HTTP estándar con cifrado a nivel de transporte (TLS) para salvaguardar la privacidad de datos y autenticar la identidad del sitio servidor." },
+    { term: "RAID (RAID 0, 1, 5, 6 y 10)", definition: "Tecnología de almacenamiento secundario que unifica múltiples discos físicos en una sola unidad lógica. RAID 0 (striping), RAID 1 (mirroring), RAID 5 (paridad distribuida) y RAID 6 (doble paridad distribuida)." },
+    { term: "SAN vs NAS", definition: "Arquitecturas de almacenamiento de red. NAS (Network Attached Storage) provee acceso a nivel de archivos usando protocolos como NFS/CIFS sobre LAN; SAN (Storage Area Network) ofrece bloques crudos de disco sobre red dedicada." },
+    { term: "VoiceXML (VXML)", definition: "Estándar de la W3C basado en lenguaje XML para crear páginas de diálogo de voz interactivas, permitiendo el control y diseño de sistemas IVR con reconocimiento del habla y síntesis de voz." },
+    { term: "CRM (Operativo, Analítico y Colaborativo)", definition: "Software de gestión de relaciones con los usuarios. Operativo (front-office/back-office), Analítico (Business Intelligence y explotación predictiva) y Colaborativo (gestión de canales de contacto)." },
+    { term: "WFM (Workforce Management)", definition: "Sistemas inteligentes aplicados en centros de contacto para estimar demandas de tráfico, calcular dotación y planificar turnos del personal de atención telefónica mediante algoritmos de Erlang C." },
+    { term: "MAGERIT y PILAR", definition: "MAGERIT es la metodología de análisis y gestión de riesgos tecnológicos recomendada para la Administración Pública de España; PILAR es la suite de herramientas que permite modelarla y ejecutarla." },
+    { term: "BIA (Business Impact Analysis)", definition: "Estudio de impacto del negocio destinado a evaluar las consecuencias de una interrupción de servicios, fijando el RTO (tiempo objetivo de recuperación) y el RPO (punto objetivo de recuperación)." },
+    { term: "Patrones de Diseño GoF", definition: "Soluciones reutilizables predefinidas a problemas recurrentes de arquitectura de software, agrupadas por la Gang of Four en tres familias: Creacionales, Estructurales y de Comportamiento." },
+    { term: "WCAG y Principios P.O.U.R.", definition: "Directrices de accesibilidad web estructuradas en 4 pilares: Perceptible (información clara), Operable (navegación completa por teclado), Comprensible (lenguaje simple) y Robusto (compatibilidad técnica)." },
+    { term: "Erasure Coding", definition: "Método de tolerancia a fallos distribuidos que trocea un objeto en N fragmentos de datos y M de paridad redundantes, ofreciendo una alta durabilidad con mucho menor impacto en almacenamiento que la réplica o RAID." },
+    { term: "Cifrado Homomórfico", definition: "Tipo avanzado de criptografía que posibilita procesar operaciones algebraicas complejas directamente sobre textos cifrados sin descifrarlos en memoria, manteniendo la confidencialidad." },
+    { term: "Proxy vs Reverse Proxy", definition: "El Proxy actúa como intermediario para el tráfico saliente de clientes locales hacia internet; el Reverse Proxy intermedia el tráfico entrante de internet para balancear cargas y proteger servidores web." },
+    { term: "IPsec (AH vs ESP)", definition: "Marco de seguridad para comunicaciones IP a nivel de Capa 3. AH (Authentication Header) ofrece autenticidad de origen; ESP (Encapsulating Security Payload) añade además confidencialidad por cifrado." },
+    { term: "Firma Long-Term (LTV)", definition: "Estructuras de firmas de larga duración (ej: XAdES-A, PAdES-LTV) que incrustan sellos de tiempo y material de revocación (OCSP/CRL) para garantizar la validez legal incluso si el certificado raíz expira." }
+  ];
+
+
+  // ==========================================
+  // 🗺️ SPA ROUTING & NAVIGATION
+  // ==========================================
+  const navItems = document.querySelectorAll('.nav-menu .nav-item');
+  navItems.forEach(item => {
+    item.addEventListener('click', () => {
+      const targetId = item.getAttribute('data-target');
+      if (!targetId) return;
+
+      // Update active nav-menu list item
+      navItems.forEach(nav => nav.classList.remove('active'));
+      item.classList.add('active');
+
+      // Update active section visibility
+      document.querySelectorAll('.app-section').forEach(section => {
+        section.classList.remove('active');
+      });
+      
+      const targetSection = document.getElementById(targetId);
+      if (targetSection) {
+        targetSection.classList.add('active');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    });
+  });
+
+
+  // ==========================================
+  // 🌓 THEME SWITCHER LOGIC
+  // ==========================================
+  const themeToggleBtn = document.getElementById('theme-toggle-btn');
+  const themeSwitchText = document.querySelector('.theme-switch span');
+
+  // Load and apply saved visual preference
+  const savedTheme = localStorage.getItem('gsi_theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+  updateThemeText(savedTheme);
+
+  if (themeToggleBtn) {
+    themeToggleBtn.addEventListener('click', () => {
+      const currentTheme = document.documentElement.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      
+      document.documentElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('gsi_theme', newTheme);
+      updateThemeText(newTheme);
+    });
+  }
+
+  function updateThemeText(theme) {
+    if (themeSwitchText) {
+      themeSwitchText.textContent = theme === 'dark' ? 'Modo Oscuro' : 'Modo Claro';
+    }
+  }
+
+
+  // ==========================================
+  // 📝 DYNAMIC LAWS INJECTION & SEARCH
+  // ==========================================
+  const lawsContainer = document.getElementById('laws-container');
+  
+  function renderLaws(lawsToRender) {
+    if (!lawsContainer) return;
+    lawsContainer.innerHTML = '';
     
-    // Botón de regenerar examen
-    document.getElementById("regenerate-btn").addEventListener("click", () => {
-        if (!testGraded && Object.keys(userAnswers).length > 0) {
-            if (confirm("¿Estás seguro de que quieres regenerar el examen? Perderás tu progreso actual.")) {
-                generateNewTest();
+    if (lawsToRender.length === 0) {
+      lawsContainer.innerHTML = `
+        <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
+          <p style="color: var(--text-muted); font-size: 1rem;">No se encontraron leyes que coincidan con los criterios de búsqueda.</p>
+        </div>
+      `;
+      return;
+    }
+
+    lawsToRender.forEach(law => {
+      const card = document.createElement('div');
+      card.className = 'card law-card';
+      
+      card.innerHTML = `
+        <div class="law-header">
+          <span class="law-title">${law.title}</span>
+          <span class="badge badge-${law.badgeType}">${law.badge}</span>
+        </div>
+        <p class="law-desc">${law.desc}</p>
+        <div class="law-scope">${law.scope}</div>
+      `;
+      
+      lawsContainer.appendChild(card);
+    });
+  }
+
+  // Initial laws rendering on page load
+  renderLaws(lawsData);
+
+  // Search input event listener
+  const lawSearch = document.getElementById('law-search');
+  if (lawSearch) {
+    lawSearch.addEventListener('input', () => {
+      const query = lawSearch.value.toLowerCase().trim();
+      const filteredLaws = lawsData.filter(law => {
+        return law.title.toLowerCase().includes(query) || 
+               law.desc.toLowerCase().includes(query) || 
+               law.scope.toLowerCase().includes(query);
+      });
+      renderLaws(filteredLaws);
+    });
+  }
+
+
+  // ==========================================
+  // 📚 DYNAMIC GLOSSARY INJECTION & SEARCH
+  // ==========================================
+  const generalListContainer = document.getElementById('glossary-general-list');
+  const technicalListContainer = document.getElementById('glossary-technical-list');
+
+  function renderGlossary(generalTerms, technicalTerms) {
+    if (generalListContainer) {
+      generalListContainer.innerHTML = '';
+      if (generalTerms.length === 0) {
+        generalListContainer.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 2rem;">No hay términos generales</p>';
+      } else {
+        generalTerms.forEach(item => {
+          const div = document.createElement('div');
+          div.className = 'glossary-item';
+          div.innerHTML = `
+            <div class="glossary-term">${item.term}</div>
+            <div class="glossary-definition">${item.definition}</div>
+          `;
+          generalListContainer.appendChild(div);
+        });
+      }
+    }
+
+    if (technicalListContainer) {
+      technicalListContainer.innerHTML = '';
+      if (technicalTerms.length === 0) {
+        technicalListContainer.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 2rem;">No hay términos técnicos</p>';
+      } else {
+        technicalTerms.forEach(item => {
+          const div = document.createElement('div');
+          div.className = 'glossary-item';
+          div.innerHTML = `
+            <div class="glossary-term">${item.term}</div>
+            <div class="glossary-definition">${item.definition}</div>
+          `;
+          technicalListContainer.appendChild(div);
+        });
+      }
+    }
+  }
+
+  // Sort general and technical glossary terms alphabetically by term
+  glossaryGeneral.sort((a, b) => a.term.localeCompare(b.term, 'es', { sensitivity: 'base' }));
+  glossaryTechnical.sort((a, b) => a.term.localeCompare(b.term, 'es', { sensitivity: 'base' }));
+
+  // Initial glossary rendering on page load
+  renderGlossary(glossaryGeneral, glossaryTechnical);
+
+  // Search input event listener
+  const glossarySearch = document.getElementById('glossary-search');
+  if (glossarySearch) {
+    glossarySearch.addEventListener('input', () => {
+      const query = glossarySearch.value.toLowerCase().trim();
+      
+      const filteredGeneral = glossaryGeneral.filter(item => {
+        return item.term.toLowerCase().includes(query) || 
+               item.definition.toLowerCase().includes(query);
+      });
+
+      const filteredTechnical = glossaryTechnical.filter(item => {
+        return item.term.toLowerCase().includes(query) || 
+               item.definition.toLowerCase().includes(query);
+      });
+
+      renderGlossary(filteredGeneral, filteredTechnical);
+    });
+  }
+
+
+  // ==========================================
+  // 📝 COLLAPSIBLE ACCORDIONS (SYLLABUS & PRACTICAL QUESTIONS)
+  // ==========================================
+  document.addEventListener('click', (e) => {
+    try {
+      const header = e.target.closest('.accordion-header');
+      if (!header) return;
+      
+      const item = header.closest('.accordion-item');
+      if (!item) return;
+
+      const isOpen = item.classList.contains('open');
+      item.classList.toggle('open');
+      header.setAttribute('aria-expanded', !isOpen);
+    } catch (error) {
+      console.error('Error toggling accordion:', error);
+    }
+  });
+
+  // Listener para los temas desplegables del temario (Syllabus)
+  document.addEventListener('click', (e) => {
+    try {
+      const topicHeader = e.target.closest('.topic-header');
+      if (!topicHeader) return;
+      
+      const card = topicHeader.closest('.topic-card.collapsible-topic');
+      if (!card) return;
+
+      card.classList.toggle('open');
+    } catch (error) {
+      console.error('Error toggling syllabus topic:', error);
+    }
+  });
+
+
+  // ==========================================
+  // 📝 PRACTICAL CASES SWITCHER
+  // ==========================================
+  const caseButtons = document.querySelectorAll('.case-btn');
+  caseButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const caseId = btn.getAttribute('data-case');
+      if (!caseId) return;
+
+      // Toggle active selector buttons
+      caseButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      // Toggle active case content container
+      document.querySelectorAll('.case-content-container').forEach(container => {
+        container.classList.remove('active');
+      });
+      const targetContainer = document.getElementById(`case-${caseId}`);
+      if (targetContainer) {
+        targetContainer.classList.add('active');
+      }
+    });
+  });
+
+
+  // ==========================================
+  // 🎯 INTERACTIVE TEST SIMULATOR ENGINE
+  // ==========================================
+  let quizQuestions = [];
+  let userAnswers = {};
+  let currentQuestionIndex = 0;
+  let timerInterval = null;
+  let secondsElapsed = 0;
+
+  // Fisher-Yates shuffle algorithm to ensure high replayability
+  function shuffleArray(array) {
+    const arr = [...array];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  // Quiz active/setup DOM Elements
+  const btnStartQuiz = document.getElementById('btn-start-quiz');
+  const quizSetupState = document.getElementById('quiz-setup-state');
+  const quizActiveState = document.getElementById('quiz-active-state');
+  const quizResultState = document.getElementById('quiz-result-state');
+  const quizReviewArea = document.getElementById('quiz-review-area');
+  const quizReviewList = document.getElementById('quiz-review-list');
+
+  const quizQuestionText = document.getElementById('quiz-question-text');
+  const quizOptionsContainer = document.getElementById('quiz-options-container');
+  const quizQuestionNumber = document.getElementById('quiz-question-number');
+  const quizProgressFill = document.getElementById('quiz-progress-fill');
+  
+  const btnQuizPrev = document.getElementById('btn-quiz-prev');
+  const btnQuizNext = document.getElementById('btn-quiz-next');
+
+  // Start exam event handler
+  if (btnStartQuiz) {
+    btnStartQuiz.addEventListener('click', () => {
+      const selectYear = document.getElementById('select-year').value;
+      const selectBlock = document.getElementById('select-block').value;
+      const selectNum = parseInt(document.getElementById('select-num').value, 10);
+
+      // Filter global questions database
+      let filtered = [];
+      if (typeof questionsData !== 'undefined') {
+        filtered = questionsData.filter(q => {
+          // Year filter
+          if (selectYear !== 'all' && q.year !== parseInt(selectYear, 10)) {
+            return false;
+          }
+          // Block filter
+          if (selectBlock !== 'all') {
+            if (selectBlock === 'general') {
+              return q.block === 'general';
+            } else if (selectBlock === 'especifico') {
+              return q.block !== 'general';
             }
-        } else {
-            generateNewTest();
-        }
-    });
-    
-    // Botón de entregar examen
-    document.getElementById("submit-btn").addEventListener("click", () => {
-        deliverExam();
-    });
-    
-    // Botón de reiniciar respuestas
-    document.getElementById("reset-btn").addEventListener("click", () => {
-        if (confirm("¿Estás seguro de que quieres borrar todas tus respuestas de este test?")) {
-            resetCurrentAnswers();
-        }
-    });
-    
-    // Botones del modal de resultados
-    document.getElementById("modal-review-btn").addEventListener("click", () => {
-        closeResultsModal();
-        showToast("Revisando examen. Las respuestas correctas están resaltadas en verde.", "info");
-    });
-    
-    document.getElementById("modal-new-btn").addEventListener("click", () => {
-        closeResultsModal();
-        generateNewTest();
-    });
-}
+          }
+          return true;
+        });
+      }
 
-// Cambiar el modo de simulación
-function setExamMode(isExam) {
-    if (examMode === isExam) return;
-    
-    if (Object.keys(userAnswers).length > 0 && !testGraded) {
-        if (!confirm("Cambiar de modo restablecerá el examen actual. ¿Deseas continuar?")) {
-            return;
-        }
-    }
-    
-    examMode = isExam;
-    
-    // Actualizar botones de la interfaz
-    if (examMode) {
-        document.getElementById("mode-examen-btn").classList.add("active");
-        document.getElementById("mode-practica-btn").classList.remove("active");
-        document.getElementById("timer-container").style.display = "flex";
-        document.getElementById("submit-btn").style.display = "inline-flex";
-    } else {
-        document.getElementById("mode-practica-btn").classList.add("active");
-        document.getElementById("mode-examen-btn").classList.remove("active");
-        document.getElementById("timer-container").style.display = "none";
-        document.getElementById("submit-btn").style.display = "none";
-    }
-    
-    generateNewTest();
-    showToast(examMode ? "Modo Examen activado (100 min, feedback al entregar)" : "Modo Práctica activado (feedback inmediato, sin tiempo)", "info");
-}
-
-// Genera un examen de 100 preguntas respetando la regla 30% general, 70% específico
-function generateNewTest() {
-    testGraded = false;
-    userAnswers = {};
-    
-    // Separar preguntas por bloques
-    const generalQuestions = questionsPool.filter(q => q.block === "general");
-    const specificQuestions = questionsPool.filter(q => q.block === "especifico");
-    
-    console.log(`Pool General: ${generalQuestions.length}, Pool Específico: ${specificQuestions.length}`);
-    
-    if (generalQuestions.length < 30 || specificQuestions.length < 70) {
-        showToast("Error: No hay suficientes preguntas en la base de datos para cumplir los pesos (30 General / 70 Específico).", "error");
-        renderEmptyState();
+      if (filtered.length === 0) {
+        alert('No se encontraron preguntas de test con los filtros seleccionados. Inténtalo con otros parámetros.');
         return;
-    }
-    
-    // Obtener 30 aleatorias de General
-    const selectedGeneral = getRandomElements(generalQuestions, 30);
-    // Obtener 70 aleatorias de Específico
-    const selectedSpecific = getRandomElements(specificQuestions, 70);
-    
-    // Combinar y guardar
-    currentTestQuestions = [...selectedGeneral, ...selectedSpecific];
-    
-    // Reiniciar temporizador
-    clearInterval(timerInterval);
-    if (examMode) {
-        timeRemaining = EXAM_DURATION;
-        updateTimerDisplay();
-        startTimer();
-    }
-    
-    // Renderizar
-    renderDashboard();
-    renderQuestionsList();
-    renderQuestionsGrid();
-    
-    // Desplazar al inicio
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    
-    showToast("¡Nuevo examen generado! 30% General y 70% Específico.", "success");
-}
+      }
 
-// Restablece las respuestas del examen actual
-function resetCurrentAnswers() {
-    userAnswers = {};
-    testGraded = false;
-    
-    // Si es modo examen, reiniciar timer también
-    if (examMode) {
-        clearInterval(timerInterval);
-        timeRemaining = EXAM_DURATION;
-        updateTimerDisplay();
-        startTimer();
+      // Shuffle and slice according to configuration
+      quizQuestions = shuffleArray(filtered).slice(0, selectNum);
+      userAnswers = {};
+      currentQuestionIndex = 0;
+      secondsElapsed = 0;
+
+      // Start elapsed timer
+      clearInterval(timerInterval);
+      document.getElementById('quiz-time-display').textContent = '⏱️ Tiempo: 00:00';
+      timerInterval = setInterval(() => {
+        secondsElapsed++;
+        const mins = Math.floor(secondsElapsed / 60).toString().padStart(2, '0');
+        const secs = (secondsElapsed % 60).toString().padStart(2, '0');
+        document.getElementById('quiz-time-display').textContent = `⏱️ Tiempo: ${mins}:${secs}`;
+      }, 1000);
+
+      // Switch panels visibility
+      quizSetupState.style.display = 'none';
+      quizActiveState.style.display = 'block';
+      quizResultState.style.display = 'none';
+      quizReviewArea.style.display = 'none';
+
+      // Render first question
+      renderQuestion();
+    });
+  }
+
+  // Render active question details
+  function renderQuestion() {
+    if (!quizQuestions.length) return;
+    const question = quizQuestions[currentQuestionIndex];
+
+    // Meta texts and progress bar
+    quizQuestionNumber.textContent = `Pregunta ${currentQuestionIndex + 1} de ${quizQuestions.length}`;
+    const progressPercent = ((currentQuestionIndex + 1) / quizQuestions.length) * 100;
+    if (quizProgressFill) {
+      quizProgressFill.style.width = `${progressPercent}%`;
     }
-    
-    renderDashboard();
-    renderQuestionsList();
-    renderQuestionsGrid();
-    showToast("Respuestas limpiadas. Examen reiniciado.", "info");
-}
 
-// Obtener elementos aleatorios de un array sin repetir
-function getRandomElements(arr, count) {
-    const shuffled = [...arr].sort(() => 0.5 - Math.random());
-    return shuffled.slice(0, count);
-}
+    // Load question text
+    if (quizQuestionText) {
+      quizQuestionText.textContent = question.question;
+    }
 
-// Inicia el temporizador
-function startTimer() {
-    timerInterval = setInterval(() => {
-        timeRemaining--;
-        updateTimerDisplay();
-        
-        // Alerta cuando quedan menos de 5 minutos
-        if (timeRemaining === 300) {
-            document.getElementById("timer-container").classList.add("danger");
-            showToast("¡Atención! Quedan menos de 5 minutos para finalizar el examen.", "warning");
+    // Clear and build options buttons
+    if (quizOptionsContainer) {
+      quizOptionsContainer.innerHTML = '';
+      const optionKeys = ['a', 'b', 'c', 'd'];
+      optionKeys.forEach(key => {
+        if (question.options && question.options[key]) {
+          const optionBtn = document.createElement('button');
+          optionBtn.className = 'quiz-option';
+          optionBtn.setAttribute('aria-label', `Opción ${key.toUpperCase()}: ${question.options[key]}`);
+          
+          if (userAnswers[currentQuestionIndex] === key) {
+            optionBtn.classList.add('selected');
+          }
+
+          optionBtn.innerHTML = `
+            <span class="quiz-option-letter">${key.toUpperCase()}</span>
+            <span>${question.options[key]}</span>
+          `;
+
+          optionBtn.addEventListener('click', () => {
+            const currentOptions = quizOptionsContainer.querySelectorAll('.quiz-option');
+            currentOptions.forEach(opt => opt.classList.remove('selected'));
+            
+            optionBtn.classList.add('selected');
+            userAnswers[currentQuestionIndex] = key;
+          });
+
+          quizOptionsContainer.appendChild(optionBtn);
         }
-        
-        if (timeRemaining <= 0) {
-            clearInterval(timerInterval);
-            finishExamAutomatic();
-        }
-    }, 1000);
-}
+      });
+    }
 
-// Actualiza el texto del reloj
-function updateTimerDisplay() {
-    const minutes = Math.floor(timeRemaining / 60);
-    const seconds = timeRemaining % 60;
-    
-    const minutesStr = minutes < 10 ? "0" + minutes : minutes;
-    const secondsStr = seconds < 10 ? "0" + seconds : seconds;
-    
-    document.getElementById("timer-value").textContent = `${minutesStr}:${secondsStr}`;
-}
-
-// Finaliza el examen automáticamente al agotarse el tiempo
-function finishExamAutomatic() {
-    showToast("¡Tiempo agotado! Tu examen se entregará automáticamente.", "warning");
-    deliverExam(true);
-}
-
-// Entrega y corrige el examen
-function deliverExam(force = false) {
-    if (testGraded) {
-        showToast("Este examen ya ha sido entregado y calificado.", "warning");
-        return;
+    // Toggle navigation button styles and labels
+    if (btnQuizPrev) {
+      btnQuizPrev.disabled = currentQuestionIndex === 0;
     }
     
-    const answeredCount = Object.keys(userAnswers).length;
-    
-    if (!force && answeredCount < 100) {
-        const confirmDelivery = confirm(`Has respondido ${answeredCount} de 100 preguntas. ¿Estás seguro de que quieres entregar el examen? Las preguntas no respondidas contarán como 0 puntos.`);
-        if (!confirmDelivery) return;
+    if (btnQuizNext) {
+      if (currentQuestionIndex === quizQuestions.length - 1) {
+        btnQuizNext.innerHTML = 'Finalizar y Corregir 🏁';
+        btnQuizNext.className = 'btn btn-accent';
+      } else {
+        btnQuizNext.innerHTML = 'Siguiente ➡️';
+        btnQuizNext.className = 'btn';
+      }
     }
-    
+  }
+
+  // Question navigation handlers
+  if (btnQuizPrev) {
+    btnQuizPrev.addEventListener('click', () => {
+      if (currentQuestionIndex > 0) {
+        currentQuestionIndex--;
+        renderQuestion();
+      }
+    });
+  }
+
+  if (btnQuizNext) {
+    btnQuizNext.addEventListener('click', () => {
+      if (currentQuestionIndex < quizQuestions.length - 1) {
+        currentQuestionIndex++;
+        renderQuestion();
+      } else {
+        // Evaluate and correct exam
+        finishQuiz();
+      }
+    });
+  }
+
+  // Quiz evaluation and correction (AGE Spanish grading correction)
+  const resultScore = document.getElementById('result-score');
+  const resultCorrect = document.getElementById('result-correct');
+  const resultIncorrect = document.getElementById('result-incorrect');
+  const resultComment = document.getElementById('result-comment');
+
+  function finishQuiz() {
     clearInterval(timerInterval);
-    testGraded = true;
-    
-    // Calcular resultados
+
     let correct = 0;
     let incorrect = 0;
-    
-    currentTestQuestions.forEach((q, idx) => {
-        const userAnswer = userAnswers[idx];
-        if (userAnswer) {
-            if (userAnswer === q.answer) {
-                correct++;
-            } else {
-                incorrect++;
-            }
-        }
+    let unanswered = 0;
+
+    quizQuestions.forEach((q, index) => {
+      const userAnswer = userAnswers[index];
+      if (userAnswer === undefined) {
+        unanswered++;
+      } else if (userAnswer === q.answer) {
+        correct++;
+      } else {
+        incorrect++;
+      }
     });
-    
-    const blank = 100 - correct - incorrect;
-    
-    // Fórmula de puntuación oficial: Aciertos - (Errores * 0.33)
-    const rawScore = correct - (incorrect * 0.33);
-    const finalScore = Math.max(0, parseFloat(rawScore.toFixed(2)));
-    
-    // Nota sobre 10
-    const grade = parseFloat((finalScore / 10).toFixed(2));
-    const aprobado = finalScore >= 50;
-    
-    // Actualizar Modal de Resultados
-    document.getElementById("modal-score-grade").textContent = grade.toFixed(2);
-    
-    const badge = document.getElementById("modal-status-badge");
-    if (aprobado) {
-        badge.textContent = "¡APROBADO!";
-        badge.className = "results-badge aprobado";
+
+    const total = quizQuestions.length;
+    // Baremación oficial AGE: acierto suma +1, error resta -0.33
+    let score = (correct - (incorrect * 0.33)) / total * 10;
+    if (score < 0) score = 0.0;
+
+    // Show results view
+    if (quizActiveState) quizActiveState.style.display = 'none';
+    if (quizResultState) quizResultState.style.display = 'block';
+
+    // Populate data
+    if (resultScore) resultScore.textContent = `${score.toFixed(2)} / 10`;
+    if (resultCorrect) resultCorrect.textContent = correct;
+    if (resultIncorrect) resultIncorrect.textContent = incorrect;
+
+    // Evaluate grade and render styled comment
+    if (resultComment) {
+      resultComment.className = ''; 
+      if (score < 5.0) {
+        resultComment.textContent = '🔴 SUSPENSO - Sigue estudiando. ¡La constancia es la clave en la oposición! Repasa el temario de leyes e inténtalo de nuevo.';
+        resultComment.style.background = 'rgba(239, 68, 68, 0.12)';
+        resultComment.style.color = '#f87171';
+        resultComment.style.border = '1px solid rgba(239, 68, 68, 0.25)';
+      } else if (score < 7.0) {
+        resultComment.textContent = '🟡 APTO JUSTO - Buen trabajo, pero necesitas consolidar conocimientos para asegurar plaza. Revisa los fallos detenidamente.';
+        resultComment.style.background = 'rgba(245, 158, 11, 0.12)';
+        resultComment.style.color = '#fbbf24';
+        resultComment.style.border = '1px solid rgba(245, 158, 11, 0.25)';
+      } else if (score < 9.0) {
+        resultComment.textContent = '🟢 SOBRESALIENTE - ¡Excelente nivel! Vas por muy buen camino para conseguir plaza. Sigue así y no bajes la guardia.';
+        resultComment.style.background = 'rgba(16, 185, 129, 0.12)';
+        resultComment.style.color = '#34d399';
+        resultComment.style.border = '1px solid rgba(16, 185, 129, 0.25)';
+      } else {
+        resultComment.textContent = '👑 MATRÍCULA DE HONOR - ¡Espectacular! Tienes el temario totalmente dominado. Estás a nivel de número 1 de la oposición.';
+        resultComment.style.background = 'rgba(168, 85, 247, 0.12)';
+        resultComment.style.color = '#c084fc';
+        resultComment.style.border = '1px solid rgba(168, 85, 247, 0.25)';
+      }
+    }
+
+    // Cache statistical results locally
+    const historyEntry = {
+      date: new Date().toLocaleDateString(),
+      score: score,
+      correct: correct,
+      incorrect: incorrect,
+      total: total
+    };
+
+    let history = [];
+    try {
+      const stored = localStorage.getItem('gsi_quiz_history');
+      if (stored) {
+        history = JSON.parse(stored);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    history.push(historyEntry);
+    localStorage.setItem('gsi_quiz_history', JSON.stringify(history));
+
+    // Update history statistics widget view
+    updateHistoryView();
+  }
+
+  // Update history widget on sidebar
+  function updateHistoryView() {
+    let history = [];
+    try {
+      const stored = localStorage.getItem('gsi_quiz_history');
+      if (stored) {
+        history = JSON.parse(stored);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+
+    const totalExams = history.length;
+    const historyTotal = document.getElementById('history-total');
+    const historyAvg = document.getElementById('history-avg');
+    const historyQuestions = document.getElementById('history-questions');
+
+    if (historyTotal) historyTotal.textContent = totalExams;
+
+    if (totalExams === 0) {
+      if (historyAvg) historyAvg.textContent = '-- / 10';
+      if (historyQuestions) historyQuestions.textContent = '0';
     } else {
-        badge.textContent = "SUSPENSO";
-        badge.className = "results-badge suspenso";
+      const sumScores = history.reduce((sum, entry) => sum + entry.score, 0);
+      const avg = sumScores / totalExams;
+      const totalQ = history.reduce((sum, entry) => sum + entry.total, 0);
+
+      if (historyAvg) historyAvg.textContent = `${avg.toFixed(2)} / 10`;
+      if (historyQuestions) historyQuestions.textContent = totalQ;
     }
-    
-    document.getElementById("modal-stat-correct").textContent = correct;
-    document.getElementById("modal-stat-incorrect").textContent = incorrect;
-    document.getElementById("modal-stat-score").textContent = finalScore.toFixed(2);
-    
-    // Dibujar el círculo de progreso animado
-    const progressCircle = document.getElementById("modal-circle-progress");
-    // El stroke-dasharray del círculo es 440 (perímetro con r=70: 2 * pi * 70 = 440 aprox)
-    const dashOffset = 440 - (440 * (finalScore / 100));
-    
-    // Retrasar un poco la animación del círculo para que se aprecie al abrir el modal
-    setTimeout(() => {
-        progressCircle.style.strokeDashoffset = dashOffset;
-    }, 300);
-    
-    // Mostrar modal
-    document.getElementById("results-modal").classList.add("active");
-    
-    // Actualizar interfaz para mostrar las respuestas correctas/incorrectas
-    renderDashboard();
-    renderQuestionsList();
-    renderQuestionsGrid();
-}
+  }
 
-// Cierra el modal de resultados
-function closeResultsModal() {
-    document.getElementById("results-modal").classList.remove("active");
-}
+  // Set initial statistics on load
+  updateHistoryView();
 
-// Renderiza los contadores y barras de progreso del Dashboard superior
-function renderDashboard() {
-    const answeredCount = Object.keys(userAnswers).length;
-    document.getElementById("dashboard-answered").textContent = `${answeredCount} / 100`;
-    
-    // Progreso general
-    const progressGeneral = (answeredCount / 100) * 100;
-    document.getElementById("dashboard-progress-bar").style.width = `${progressGeneral}%`;
-    
-    // Contar por bloques
-    let generalAnswered = 0;
-    let specificAnswered = 0;
-    
-    currentTestQuestions.forEach((q, idx) => {
-        if (userAnswers[idx]) {
-            if (q.block === "general") generalAnswered++;
-            else specificAnswered++;
-        }
+  // Retry exam simulation
+  const btnQuizRetry = document.getElementById('btn-quiz-retry');
+  if (btnQuizRetry) {
+    btnQuizRetry.addEventListener('click', () => {
+      if (quizResultState) quizResultState.style.display = 'none';
+      if (quizReviewArea) quizReviewArea.style.display = 'none';
+      if (quizSetupState) quizSetupState.style.display = 'block';
     });
-    
-    document.getElementById("dashboard-general").textContent = `${generalAnswered} / 30`;
-    const progressGen = (generalAnswered / 30) * 100;
-    document.getElementById("dashboard-progress-gen").style.width = `${progressGen}%`;
-    
-    document.getElementById("dashboard-specific").textContent = `${specificAnswered} / 70`;
-    const progressSpec = (specificAnswered / 70) * 100;
-    document.getElementById("dashboard-progress-spec").style.width = `${progressSpec}%`;
-    
-    // Si el examen está corregido, mostrar la nota en vivo en el dashboard
-    const scoreCard = document.getElementById("stat-score-card");
-    if (testGraded) {
-        let correct = 0;
-        let incorrect = 0;
-        currentTestQuestions.forEach((q, idx) => {
-            const userAnswer = userAnswers[idx];
-            if (userAnswer) {
-                if (userAnswer === q.answer) correct++;
-                else incorrect++;
-            }
-        });
-        const finalScore = Math.max(0, correct - (incorrect * 0.33));
-        document.getElementById("dashboard-score-val").textContent = `${finalScore.toFixed(2)} pts`;
-        document.getElementById("dashboard-score-label").textContent = `Nota Final (${(finalScore / 10).toFixed(2)}/10)`;
-    } else {
-        document.getElementById("dashboard-score-val").textContent = examMode ? "--" : "Inmediato";
-        document.getElementById("dashboard-score-label").textContent = examMode ? "Calificación" : "Práctica Activa";
-    }
-}
+  }
 
-// Renderiza la lista completa de las 100 preguntas
-function renderQuestionsList() {
-    const container = document.getElementById("questions-list");
-    container.innerHTML = "";
-    
-    currentTestQuestions.forEach((q, idx) => {
-        const card = document.createElement("div");
-        card.className = "question-card";
-        card.id = `q-card-${idx}`;
-        
-        // Determinar badges
-        const blockText = q.block === "general" ? "Temas Generales (Bloque I)" : "Temas Específicos (Bloques II-IV)";
-        const blockClass = q.block === "general" ? "badge-general" : "badge-specific";
-        
-        let badgesHtml = `
-            <span class="badge ${blockClass}">${blockText}</span>
-            <span class="badge badge-year">Año ${q.year}</span>
-        `;
-        
-        if (q.is_reserve) {
-            badgesHtml += `<span class="badge" style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); color: #60a5fa;">Pregunta Reserva</span>`;
-        }
-        
-        // Si la pregunta está marcada como importante (repetida en varios años)
-        if (q.important) {
-            badgesHtml += `<span class="badge badge-important"><i class="fas fa-star"></i> Pregunta Frecuente</span>`;
-        }
-        
-        // Texto de la pregunta
-        const questionTextHtml = `${idx + 1}. ${q.question}`;
-        
-        // Renderizar opciones
-        let optionsHtml = "";
-        const optionKeys = ['a', 'b', 'c', 'd'];
-        
-        optionKeys.forEach(key => {
-            const optionText = q.options[key];
-            if (!optionText) return;
-            
-            const isSelected = userAnswers[idx] === key;
-            let optionClass = isSelected ? "selected" : "";
-            
-            // Si el examen está entregado y corregido, o estamos en Modo Práctica
-            if (testGraded || (!examMode && userAnswers[idx])) {
-                if (key === q.answer) {
-                    // Esta es la correcta
-                    optionClass = "correct";
-                } else if (isSelected && userAnswerIsNotCorrect(idx, q.answer)) {
-                    // Esta fue elegida incorrectamente
-                    optionClass = "incorrect";
-                } else if (!isSelected && isSelectedAnswerWrong(idx, q.answer) && key === q.answer) {
-                    // Si el usuario falló, marcamos la correcta que debió elegir
-                    optionClass = "correct-answer-missed";
-                }
-            }
-            
-            optionsHtml += `
-                <div class="option-item ${optionClass}" onclick="selectOption(${idx}, '${key}')">
-                    <div class="option-marker">${key}</div>
-                    <div class="option-content">${escapeHTML(optionText)}</div>
-                </div>
-            `;
-        });
-        
-        card.innerHTML = `
-            <div class="q-card-header">
-                <span class="q-number-badge">Pregunta ${idx + 1}</span>
-                <div class="q-badges">
-                    ${badgesHtml}
-                </div>
-            </div>
-            <h2 class="q-text">${escapeHTML(questionTextHtml)}</h2>
-            <div class="options-list">
-                ${optionsHtml}
-            </div>
-        `;
-        
-        container.appendChild(card);
-    });
-}
-
-// Helpers para clases de opciones
-function userAnswerIsNotCorrect(qIdx, correctAns) {
-    return userAnswers[qIdx] !== correctAns;
-}
-
-function isSelectedAnswerWrong(qIdx, correctAns) {
-    return userAnswers[qIdx] && userAnswers[qIdx] !== correctAns;
-}
-
-// Renderiza la cuadrícula de navegación rápida de la barra lateral
-function renderQuestionsGrid() {
-    const grid = document.getElementById("questions-grid");
-    grid.innerHTML = "";
-    
-    currentTestQuestions.forEach((q, idx) => {
-        const item = document.createElement("a");
-        item.href = `#q-card-${idx}`;
-        item.className = "grid-item";
-        item.textContent = idx + 1;
-        
-        // Manejar clics para scroll suave y foco visual
-        item.addEventListener("click", (e) => {
-            e.preventDefault();
-            const target = document.getElementById(`q-card-${idx}`);
-            if (target) {
-                target.scrollIntoView({ behavior: "smooth", block: "center" });
-                
-                // Efecto de parpadeo visual en la tarjeta
-                target.classList.add("active-target");
-                setTimeout(() => {
-                    target.classList.remove("active-target");
-                }, 1500);
-            }
-        });
-        
-        // Estilos según el estado
-        if (userAnswers[idx]) {
-            item.classList.add("answered");
-            
-            // Si el examen está corregido, o estamos en Modo Práctica
-            if (testGraded || (!examMode && userAnswers[idx])) {
-                if (userAnswers[idx] === q.answer) {
-                    item.classList.add("correct");
-                } else {
-                    item.classList.add("incorrect");
-                }
-            }
-        }
-        
-        if (q.important) {
-            item.classList.add("important");
-        }
-        
-        grid.appendChild(item);
-    });
-}
-
-// Selecciona una opción en una pregunta
-function selectOption(qIdx, optionKey) {
-    if (testGraded) {
-        showToast("El examen ya ha sido entregado. Genera uno nuevo para volver a jugar.", "warning");
-        return;
-    }
-    
-    // En modo práctica, si ya respondió, no dejamos cambiar (para incentivar el aprendizaje directo)
-    if (!examMode && userAnswers[qIdx]) {
-        return;
-    }
-    
-    // Guardar respuesta
-    userAnswers[qIdx] = optionKey;
-    
-    // Si estamos en Modo Práctica, lanzamos un feedback auditivo/visual inmediato
-    if (!examMode) {
-        const q = currentTestQuestions[qIdx];
-        if (optionKey === q.answer) {
-            showToast(`¡Pregunta ${qIdx + 1} Correcta!`, "success");
+  // Review answers toggle
+  const btnQuizReview = document.getElementById('btn-quiz-review');
+  if (btnQuizReview) {
+    btnQuizReview.addEventListener('click', () => {
+      if (quizReviewArea) {
+        if (quizReviewArea.style.display === 'block') {
+          quizReviewArea.style.display = 'none';
         } else {
-            showToast(`Pregunta ${qIdx + 1} Incorrecta. Era la: ${q.answer.toUpperCase()}`, "error");
+          renderReviewList();
+          quizReviewArea.style.display = 'block';
+          quizReviewArea.scrollIntoView({ behavior: 'smooth' });
         }
-    }
-    
-    // Re-renderizar elementos afectados para optimizar rendimiento
-    renderDashboard();
-    renderQuestionsGrid();
-    
-    // Actualizar visualmente solo la tarjeta seleccionada (evita renderizar las 100 tarjetas completas)
-    const card = document.getElementById(`q-card-${qIdx}`);
-    if (card) {
-        const optionItems = card.querySelectorAll(".option-item");
-        const optionKeys = ['a', 'b', 'c', 'd'];
-        const q = currentTestQuestions[qIdx];
-        
-        optionItems.forEach((item, idx_opt) => {
-            const key = optionKeys[idx_opt];
-            const isSelected = key === optionKey;
-            
-            item.className = "option-item";
-            if (isSelected) item.classList.add("selected");
-            
-            // Modo Práctica: aplicar colores correct/incorrect inmediatos
-            if (!examMode) {
-                if (key === q.answer) {
-                    item.classList.add("correct");
-                } else if (isSelected && key !== q.answer) {
-                    item.classList.add("incorrect");
-                } else if (!isSelected && key === q.answer) {
-                    item.classList.add("correct-answer-missed");
-                }
-            }
-        });
-    }
-}
+      }
+    });
+  }
 
-// Muestra notificaciones flotantes premium
-function showToast(message, type = "info") {
-    const toast = document.getElementById("toast-notification");
-    const icon = toast.querySelector("i");
-    const text = toast.querySelector("span");
-    
-    text.textContent = message;
-    
-    // Limpiar clases previas
-    toast.className = "toast";
-    icon.className = "fas";
-    
-    if (type === "success") {
-        toast.style.borderLeft = "4px solid var(--success)";
-        icon.classList.add("fa-check-circle", "text-success");
-    } else if (type === "error") {
-        toast.style.borderLeft = "4px solid var(--error)";
-        icon.classList.add("fa-times-circle", "text-error");
-    } else if (type === "warning") {
-        toast.style.borderLeft = "4px solid var(--warning)";
-        icon.classList.add("fa-exclamation-triangle", "text-warning");
-    } else {
-        toast.style.borderLeft = "4px solid var(--primary)";
-        icon.classList.add("fa-info-circle");
-        icon.style.color = "var(--primary)";
-    }
-    
-    toast.classList.add("show");
-    
-    // Ocultar a los 3.5 segundos
-    setTimeout(() => {
-        toast.classList.remove("show");
-    }, 3500);
-}
+  // Build correction details step-by-step list
+  function renderReviewList() {
+    if (!quizQuestions.length || !quizReviewList) return;
+    quizReviewList.innerHTML = '';
 
-// Renderiza un estado vacío si no se cargó la BD
-function renderEmptyState() {
-    const container = document.getElementById("questions-list");
-    container.innerHTML = `
-        <div class="empty-state">
-            <i class="fas fa-database empty-state-icon"></i>
-            <h3>No se encontraron preguntas</h3>
-            <p>Por favor, asegúrate de que el archivo 'questions_db.js' esté en la misma carpeta y se cargue correctamente.</p>
+    quizQuestions.forEach((q, index) => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.style.borderLeft = '5px solid var(--glass-border)';
+      card.style.marginBottom = '1.5rem';
+      
+      const userAnswer = userAnswers[index];
+      const isCorrect = userAnswer === q.answer;
+
+      if (userAnswer === undefined) {
+        card.style.borderLeftColor = 'var(--accent)';
+      } else if (isCorrect) {
+        card.style.borderLeftColor = 'var(--success)';
+      } else {
+        card.style.borderLeftColor = 'var(--error)';
+      }
+
+      let headerMeta = `Pregunta ${index + 1} (Examen Oficial GSI ${q.year} - Bloque ${q.block === 'general' ? 'General' : 'Técnico'})`;
+      
+      let optionsHtml = '';
+      const optionKeys = ['a', 'b', 'c', 'd'];
+      optionKeys.forEach(key => {
+        if (q.options && q.options[key]) {
+          let optionClass = 'quiz-option';
+          if (key === q.answer) {
+            optionClass += ' correct';
+          } else if (userAnswer === key && !isCorrect) {
+            optionClass += ' incorrect';
+          }
+
+          optionsHtml += `
+            <div class="${optionClass}" style="cursor: default; pointer-events: none; margin-bottom: 0.5rem;">
+              <span class="quiz-option-letter">${key.toUpperCase()}</span>
+              <span>${q.options[key]}</span>
+            </div>
+          `;
+        }
+      });
+
+      let feedbackHtml = '';
+      if (userAnswer === undefined) {
+        feedbackHtml = `<p style="color: var(--accent); font-weight: 600; font-size: 0.9rem; margin-top: 1rem;">⚠️ Pregunta no contestada. La opción correcta es la <strong>${q.answer.toUpperCase()}</strong>.</p>`;
+      } else if (isCorrect) {
+        feedbackHtml = `<p style="color: var(--success); font-weight: 600; font-size: 0.9rem; margin-top: 1rem;">✔️ ¡Correcto! Respondiste la <strong>${userAnswer.toUpperCase()}</strong>.</p>`;
+      } else {
+        feedbackHtml = `<p style="color: var(--error); font-weight: 600; font-size: 0.9rem; margin-top: 1rem;">❌ Incorrecto. Respondiste la <strong>${userAnswer.toUpperCase()}</strong>. La opción correcta es la <strong>${q.answer.toUpperCase()}</strong>.</p>`;
+      }
+
+      card.innerHTML = `
+        <h3 style="margin-bottom: 0.5rem; font-size: 1.05rem; color: var(--text-muted);">${headerMeta}</h3>
+        <p style="font-weight: 600; font-size: 1.05rem; line-height: 1.5; margin-bottom: 1.5rem; color: var(--text-color);">${q.question}</p>
+        <div class="quiz-options">
+          ${optionsHtml}
         </div>
-    `;
-}
+        ${feedbackHtml}
+      `;
 
-// Helper para escapar HTML y prevenir XSS
-function escapeHTML(str) {
-    if (!str) return "";
-    return str
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
+      quizReviewList.appendChild(card);
+    });
+  }
+
+});

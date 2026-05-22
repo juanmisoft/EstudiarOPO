@@ -13,7 +13,7 @@ const questionsData = [
     },
     "answer": "a",
     "block": "general",
-    "important": false
+    "important": true
   },
   {
     "year": 2021,
@@ -28,7 +28,7 @@ const questionsData = [
     },
     "answer": "a",
     "block": "general",
-    "important": false
+    "important": true
   },
   {
     "year": 2021,
@@ -43,7 +43,7 @@ const questionsData = [
     },
     "answer": "b",
     "block": "general",
-    "important": false
+    "important": true
   },
   {
     "year": 2021,
@@ -58,7 +58,7 @@ const questionsData = [
     },
     "answer": "a",
     "block": "general",
-    "important": false
+    "important": true
   },
   {
     "year": 2021,
@@ -118,7 +118,7 @@ const questionsData = [
     },
     "answer": "b",
     "block": "general",
-    "important": false
+    "important": true
   },
   {
     "year": 2021,
@@ -163,7 +163,7 @@ const questionsData = [
     },
     "answer": "d",
     "block": "general",
-    "important": false
+    "important": true
   },
   {
     "year": 2021,
@@ -493,7 +493,7 @@ const questionsData = [
     },
     "answer": "d",
     "block": "especifico",
-    "important": false
+    "important": true
   },
   {
     "year": 2021,
@@ -583,7 +583,7 @@ const questionsData = [
     },
     "answer": "c",
     "block": "especifico",
-    "important": false
+    "important": true
   },
   {
     "year": 2021,
@@ -628,7 +628,7 @@ const questionsData = [
     },
     "answer": "a",
     "block": "especifico",
-    "important": false
+    "important": true
   },
   {
     "year": 2021,
@@ -643,7 +643,7 @@ const questionsData = [
     },
     "answer": "c",
     "block": "especifico",
-    "important": false
+    "important": true
   },
   {
     "year": 2021,
@@ -673,7 +673,7 @@ const questionsData = [
     },
     "answer": "d",
     "block": "especifico",
-    "important": false
+    "important": true
   },
   {
     "year": 2021,
@@ -688,7 +688,7 @@ const questionsData = [
     },
     "answer": "c",
     "block": "especifico",
-    "important": false
+    "important": true
   },
   {
     "year": 2021,
@@ -763,7 +763,7 @@ const questionsData = [
     },
     "answer": "a",
     "block": "especifico",
-    "important": false
+    "important": true
   },
   {
     "year": 2021,
@@ -1078,7 +1078,7 @@ const questionsData = [
     },
     "answer": "d",
     "block": "especifico",
-    "important": false
+    "important": true
   },
   {
     "year": 2021,
@@ -1123,7 +1123,7 @@ const questionsData = [
     },
     "answer": "d",
     "block": "especifico",
-    "important": false
+    "important": true
   },
   {
     "year": 2021,
@@ -1213,7 +1213,7 @@ const questionsData = [
     },
     "answer": "c",
     "block": "especifico",
-    "important": false
+    "important": true
   },
   {
     "year": 2021,
@@ -1588,7 +1588,7 @@ const questionsData = [
     },
     "answer": "c",
     "block": "general",
-    "important": false
+    "important": true
   },
   {
     "year": 2023,
@@ -1618,7 +1618,7 @@ const questionsData = [
     },
     "answer": "d",
     "block": "general",
-    "important": false
+    "important": true
   },
   {
     "year": 2023,
@@ -1993,7 +1993,7 @@ const questionsData = [
     },
     "answer": "a",
     "block": "general",
-    "important": false
+    "important": true
   },
   {
     "year": 2023,
@@ -2008,7 +2008,7 @@ const questionsData = [
     },
     "answer": "c",
     "block": "general",
-    "important": false
+    "important": true
   },
   {
     "year": 2023,
@@ -2053,7 +2053,7 @@ const questionsData = [
     },
     "answer": "d",
     "block": "especifico",
-    "important": false
+    "important": true
   },
   {
     "year": 2023,
@@ -2203,7 +2203,7 @@ const questionsData = [
     },
     "answer": "d",
     "block": "especifico",
-    "important": false
+    "important": true
   },
   {
     "year": 2023,
@@ -2218,7 +2218,7 @@ const questionsData = [
     },
     "answer": "b",
     "block": "especifico",
-    "important": false
+    "important": true
   },
   {
     "year": 2023,
@@ -2323,7 +2323,7 @@ const questionsData = [
     },
     "answer": "a",
     "block": "especifico",
-    "important": false
+    "important": true
   },
   {
     "year": 2023,
@@ -2338,7 +2338,7 @@ const questionsData = [
     },
     "answer": "a",
     "block": "especifico",
-    "important": false
+    "important": true
   },
   {
     "year": 2023,
@@ -2353,7 +2353,7 @@ const questionsData = [
     },
     "answer": "b",
     "block": "especifico",
-    "important": false
+    "important": true
   },
   {
     "year": 2023,
@@ -2623,7 +2623,7 @@ const questionsData = [
     },
     "answer": "c",
     "block": "especifico",
-    "important": false
+    "important": true
   },
   {
     "year": 2023,
@@ -2668,7 +2668,7 @@ const questionsData = [
     },
     "answer": "a",
     "block": "especifico",
-    "important": false
+    "important": true
   },
   {
     "year": 2023,
@@ -2788,7 +2788,7 @@ const questionsData = [
     },
     "answer": "b",
     "block": "especifico",
-    "important": false
+    "important": true
   },
   {
     "year": 2023,
@@ -3118,7 +3118,7 @@ const questionsData = [
     },
     "answer": "d",
     "block": "general",
-    "important": false
+    "important": true
   },
   {
     "year": 2024,
@@ -3133,7 +3133,7 @@ const questionsData = [
     },
     "answer": "b",
     "block": "general",
-    "important": false
+    "important": true
   },
   {
     "year": 2024,
@@ -3148,7 +3148,7 @@ const questionsData = [
     },
     "answer": "d",
     "block": "general",
-    "important": false
+    "important": true
   },
   {
     "year": 2024,
@@ -3178,7 +3178,7 @@ const questionsData = [
     },
     "answer": "a",
     "block": "general",
-    "important": false
+    "important": true
   },
   {
     "year": 2024,
@@ -3673,7 +3673,7 @@ const questionsData = [
     },
     "answer": "c",
     "block": "especifico",
-    "important": false
+    "important": true
   },
   {
     "year": 2024,
@@ -3838,7 +3838,7 @@ const questionsData = [
     },
     "answer": "c",
     "block": "especifico",
-    "important": false
+    "important": true
   },
   {
     "year": 2024,
@@ -3868,7 +3868,7 @@ const questionsData = [
     },
     "answer": "c",
     "block": "especifico",
-    "important": false
+    "important": true
   },
   {
     "year": 2024,
@@ -3988,7 +3988,7 @@ const questionsData = [
     },
     "answer": "c",
     "block": "especifico",
-    "important": false
+    "important": true
   },
   {
     "year": 2024,
@@ -4003,7 +4003,7 @@ const questionsData = [
     },
     "answer": "a",
     "block": "especifico",
-    "important": false
+    "important": true
   },
   {
     "year": 2024,
@@ -4363,7 +4363,7 @@ const questionsData = [
     },
     "answer": "c",
     "block": "especifico",
-    "important": false
+    "important": true
   },
   {
     "year": 2024,
@@ -4678,7 +4678,7 @@ const questionsData = [
     },
     "answer": "a",
     "block": "especifico",
-    "important": false
+    "important": true
   },
   {
     "year": 2025,
@@ -4753,7 +4753,7 @@ const questionsData = [
     },
     "answer": "b",
     "block": "especifico",
-    "important": false
+    "important": true
   },
   {
     "year": 2025,
@@ -4783,7 +4783,7 @@ const questionsData = [
     },
     "answer": "c",
     "block": "especifico",
-    "important": false
+    "important": true
   },
   {
     "year": 2025,
@@ -4798,7 +4798,7 @@ const questionsData = [
     },
     "answer": "a",
     "block": "especifico",
-    "important": false
+    "important": true
   },
   {
     "year": 2025,
@@ -4813,7 +4813,7 @@ const questionsData = [
     },
     "answer": "a",
     "block": "especifico",
-    "important": false
+    "important": true
   },
   {
     "year": 2025,
@@ -4843,7 +4843,7 @@ const questionsData = [
     },
     "answer": "c",
     "block": "especifico",
-    "important": false
+    "important": true
   },
   {
     "year": 2025,
@@ -4933,7 +4933,7 @@ const questionsData = [
     },
     "answer": "a",
     "block": "especifico",
-    "important": false
+    "important": true
   },
   {
     "year": 2025,
@@ -5413,7 +5413,7 @@ const questionsData = [
     },
     "answer": "c",
     "block": "especifico",
-    "important": false
+    "important": true
   },
   {
     "year": 2025,
@@ -5533,7 +5533,7 @@ const questionsData = [
     },
     "answer": "c",
     "block": "especifico",
-    "important": false
+    "important": true
   },
   {
     "year": 2025,
@@ -5668,7 +5668,7 @@ const questionsData = [
     },
     "answer": "b",
     "block": "especifico",
-    "important": false
+    "important": true
   },
   {
     "year": 2025,
@@ -5833,7 +5833,7 @@ const questionsData = [
     },
     "answer": "d",
     "block": "especifico",
-    "important": false
+    "important": true
   },
   {
     "year": 2025,
@@ -6118,7 +6118,7 @@ const questionsData = [
     },
     "answer": "b",
     "block": "especifico",
-    "important": false
+    "important": true
   },
   {
     "year": 2025,
@@ -6238,7 +6238,7 @@ const questionsData = [
     },
     "answer": "c",
     "block": "general",
-    "important": false
+    "important": true
   },
   {
     "year": 2025,
@@ -6253,7 +6253,7 @@ const questionsData = [
     },
     "answer": "d",
     "block": "general",
-    "important": false
+    "important": true
   },
   {
     "year": 2025,
@@ -6268,7 +6268,7 @@ const questionsData = [
     },
     "answer": "a",
     "block": "general",
-    "important": false
+    "important": true
   },
   {
     "year": 2025,
@@ -6283,7 +6283,7 @@ const questionsData = [
     },
     "answer": "c",
     "block": "general",
-    "important": false
+    "important": true
   },
   {
     "year": 2025,
