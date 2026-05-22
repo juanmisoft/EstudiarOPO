@@ -422,7 +422,7 @@ h1 {
 
 @keyframes slideDown {
   from { opacity: 0; max-height: 0; }
-  to { opacity: 1; max-height: 2000px; }
+  to { opacity: 1; max-height: 30000px; }
 }
 
 /* Topics list inside Syllabus */
